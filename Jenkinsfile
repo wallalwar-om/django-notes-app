@@ -43,14 +43,9 @@ pipeline {
 
         stage("Deploy") {
             steps {
-                echo "Deploying container..."
-                sh """
-                docker rm -f ${CONTAINER_NAME} || true
-                docker run -d \
-                    --name ${CONTAINER_NAME} \
-                    -p ${PORT}:${PORT} \
-                    ${IMAGE_NAME}:latest
-                """
+                script() {
+                    deploy(CONTAINER_NAME, PORT, IMAGE_NAME, "latest")
+                }
             }
         }
     }
