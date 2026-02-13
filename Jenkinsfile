@@ -1,29 +1,57 @@
-@Library('Shared')_
-pipeline{
-    agent { label 'dev-server'}
-    
-    stages{
-        stage("Code clone"){
-            steps{
-                sh "whoami"
-            clone("https://github.com/LondheShubham153/django-notes-app.git","main")
+@Library("Shared") _
+pipeline {
+    agent { label 'Agent-1' }
+
+    environment {
+        IMAGE_NAME = "notes-app"
+        CONTAINER_NAME = "notes-app-container"
+        PORT = "8000"
+    }
+
+    stages {
+        stage("Hello") {
+            steps {
+                script {
+                    echo "Groovy files name"
+                    hello()
+                }
             }
         }
-        stage("Code Build"){
-            steps{
-            dockerbuild("notes-app","latest")
+        stage("Code clone") {
+            steps {
+                script {
+                    clone("https://github.com/wallalwar-om/django-notes-app.git", "dev")
+                }
             }
         }
-        stage("Push to DockerHub"){
-            steps{
-                dockerpush("dockerHubCreds","notes-app","latest")
+
+        stage("Code Build") {
+            steps {
+                script {
+                    docker_build(IMAGE_NAME, "latest")
+                }
             }
         }
-        stage("Deploy"){
-            steps{
-                deploy()
+
+        stage("Push to DockerHub") {
+            steps {
+                script {
+                    docker_push(IMAGE_NAME, "latest", "omwallalwar")
+                }
             }
         }
-        
+
+        stage("Deploy") {
+            steps {
+                echo "Deploying container..."
+                sh """
+                docker rm -f ${CONTAINER_NAME} || true
+                docker run -d \
+                    --name ${CONTAINER_NAME} \
+                    -p ${PORT}:${PORT} \
+                    ${IMAGE_NAME}:latest
+                """
+            }
+        }
     }
 }
